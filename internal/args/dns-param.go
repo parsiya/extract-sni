@@ -19,6 +19,7 @@ func (d DNSParam) String() string {
 
 // UnmarshalText parses and validates the incoming DNSParam.
 func (d *DNSParam) UnmarshalText(b []byte) error {
+
 	// Convert it to string.
 	s := string(b)
 

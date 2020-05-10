@@ -31,7 +31,8 @@ only required parameter.
 * `go run extract-sni.go whatever.pcap`
 
 ### DNS
-Optional DNS to use to resolve these domains. Default is `8.8.8.8:53`.
+Optional DNS to use to resolve these domains. If no DNS is provided then the
+application uses the destination IP address from the pcap file for each domain.
 
 Pass with `-d` or `--dns`. The value can be a complete `server:port` like
 `dns.google:53`. Or `IP:port` like `8.8.8.8:53`. Port is optional and will
@@ -44,7 +45,7 @@ responsibility of the user to pass a valid and reachable DNS server.
 ### Output
 The output format for the results. Default is `hosts`. Pass with `-o` or
 `--output`. The application currently supports two output formats `hosts`
-(default) and `burp`. `both` creates both formats.
+(default) and `burp`. `both` creates both formats in one file.
 
 The output is sent to standard output. Logs and error messages are sent to
 `os.Stderr` so they do not interfere. You can (and probably should) pass the
@@ -90,8 +91,9 @@ For more information please see:
 ## Usage
 
 ```
+$ go run extract-sni.go -h
 Extracts SNIs from a pcap and generates output usable in etc/hosts file and a Burp config for thick client proxying.
-Version 0.0.1
+Version 0.1.0
 Usage: extract-sni.exe [--dns address/ip:port] [--output OUTPUT] traffic.pcap
 
 Positional arguments:
@@ -99,7 +101,7 @@ Positional arguments:
 
 Options:
   --dns address/ip:port, -d address/ip:port
-                         DNS server as Address/IP:Port [default: 8.8.8.8:53]
+                         DNS server as Address/IP:Port
   --output OUTPUT, -o OUTPUT
                          output format [default: both]
   --help, -h             display this help and exit

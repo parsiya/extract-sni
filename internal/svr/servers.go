@@ -14,9 +14,12 @@ import (
 // Servers is an alias for map[string]DestinationServer
 type Servers map[string]DestinationServer
 
-// ReadPCAP reads a pcap file and returns a map of unpopulated servers.
-func ReadPCAP(pcapFile string) (Servers, error) {
+// ReadPCAP reads a pcap file and returns a map of unpopulated servers. If useIP
+// is false then we are going to use the IP addresses from the pcap and skip DNS
+// lookups later.
+func ReadPCAP(pcapFile string, useIP bool) (Servers, error) {
 
+	// Open the pcap file.
 	handle, err := pcap.OpenOffline(pcapFile)
 	if err != nil {
 		return nil, err
@@ -28,6 +31,7 @@ func ReadPCAP(pcapFile string) (Servers, error) {
 		return nil, err
 	}
 
+	// Placeholder for the return value.
 	servers := make(Servers)
 
 	// layers.LayerTypeTCP
@@ -61,16 +65,30 @@ func ReadPCAP(pcapFile string) (Servers, error) {
 
 				switch err {
 				case nil:
-					// Probably faster to just overwrite duplicate keys than
-					// check.
-					s := DestinationServer{sni: hello.SNI, port: int(tcp.DstPort)}
-					servers[s.String()] = s
 
-					// TODO: Should we populate the server here? Spawn up a
-					// goroutine that does it and then have a WaitGroup that
-					// waits for all of these to finish in the end? How much
-					// time will we save considering most pcap files might not
-					// be that big.
+					s := DestinationServer{
+						sni:  hello.SNI,
+						port: int(tcp.DstPort),
+					}
+
+					// Check if the key already exists in the servers.
+					if _, ok := servers[s.String()]; ok {
+						// Key exists, continue.
+						continue
+					}
+
+					if useIP {
+						// Get the IP layer and the destination IP address.
+						if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer != nil {
+							if ip, ok := ipLayer.(*layers.IPv4); ok {
+								s.IPs = ip.DstIP.String()
+							}
+						}
+						// If this doesn't work the IP address stays empty.
+					}
+
+					// Add the new server to the servers map.
+					servers[s.String()] = s
 
 				case tlsx.ErrHandshakeWrongType:
 					continue
@@ -89,11 +107,14 @@ func ReadPCAP(pcapFile string) (Servers, error) {
 // PopulateServers calls Populate on a map of servers.
 func (servers Servers) PopulateServers(dns string) {
 
+	// Parallelization here will not save much time. If this turns out to be a
+	// huge bottleneck, we can return here and add it.
+
 	// Range over the servers.
 	for key, s := range servers {
 
 		// Populate each server.
-		if err := s.Populate(dns); err != nil {
+		if err := s.Lookup(dns); err != nil {
 			// If there was an error print it and continue.
 			log.Println(err)
 			continue
@@ -105,14 +126,14 @@ func (servers Servers) PopulateServers(dns string) {
 }
 
 // Hosts creates the hosts file output for servers. Be sure to call
-// PopulateServers() first.
+// PopulateServers() first if you have passed a DNS server to the app.
 func (servers Servers) Hosts() string {
 
 	var sb strings.Builder
 	for _, s := range servers {
 		hostStr, err := s.LocalHostsString()
 		if err != nil {
-			// The only time LocalHostsString() returns an error is if the ips
+			// The only time LocalHostsString() returns an error is if the IPs
 			// field is nil.
 			log.Println(err)
 			continue
@@ -145,7 +166,7 @@ func (servers Servers) Burp() string {
 
 	for _, s := range servers {
 
-		tmpString := fmt.Sprintf(jString, s.sni, strings.Split(s.ips, ",")[0])
+		tmpString := fmt.Sprintf(jString, s.sni, strings.Split(s.IPs, ",")[0])
 		ipStrings = append(ipStrings, tmpString)
 	}
 
