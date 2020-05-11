@@ -31,8 +31,8 @@ only required parameter.
 * `go run extract-sni.go whatever.pcap`
 
 ### DNS
-Optional DNS to use to resolve these domains. If no DNS is provided then the
-application uses the destination IP address from the pcap file for each domain.
+Optional DNS to use to resolve these domains. If this parameter is not provided
+then the application uses the destination IP address from the pcap file.
 
 Pass with `-d` or `--dns`. The value can be a complete `server:port` like
 `dns.google:53`. Or `IP:port` like `8.8.8.8:53`. Port is optional and will
@@ -48,8 +48,8 @@ The output format for the results. Default is `hosts`. Pass with `-o` or
 (default) and `burp`. `both` creates both formats in one file.
 
 The output is sent to standard output. Logs and error messages are sent to
-`os.Stderr` so they do not interfere. You can (and probably should) pass the
-output of the app to a text file.
+`os.Stderr` so they do not interfere with the output. You can (and probably
+should) pipe the output of the app to a text file.
 
 * `go run extract-sni.go whatever.pcap > whatever-hosts.txt`
 
@@ -60,7 +60,8 @@ Creates the entries to redirect these domains to localhost by adding them to the
 `127.0.0.1 example.net # 93.184.216.34 - 443`
 
 Note the extra info such as the resolved IP address and the destination port in
-the comments. These are useful.
+the comments in each line. These can come in handy to quickly lookup where each
+domain is.
 
 #### Burp
 Creates the entries to be added to a Burp project configuration file. These

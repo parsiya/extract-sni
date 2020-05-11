@@ -22,6 +22,7 @@ func main() {
 	useIP := false
 	if len(cliArgs.DNS.Host) == 0 {
 		useIP = true
+		log.Println("useIP is set to true, getting server IPs from the pcap file.")
 	}
 
 	// Read the pcap file.
@@ -32,17 +33,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Finished reading pcap file: ", cliArgs.PCAP)
-	log.Printf("Read %d servers.", len(servers))
+	log.Printf("Extracted %d servers from the pcap file at %s.\n", len(servers), cliArgs.PCAP)
 
 	// Populate the servers if useIP == false.
-
 	if !useIP {
+		log.Printf("Performing DNS lookups using %s.\n", cliArgs.DNS.String())
 		servers.PopulateServers(cliArgs.DNS.String())
 		log.Printf("Finished populating %d servers.\n", len(servers))
 	}
 
-	// Check the output and print.
+	fmt.Println("Printing the output to stdout.")
+	// Check the output format and print to stdout.
 	switch cliArgs.Output.String() {
 
 	// TODO: This can be better, we can reuse functions.
