@@ -50,13 +50,13 @@ func main() {
 
 	case "hosts":
 		fmt.Printf("# hosts file for %s\n\n", cliArgs.PCAP)
-		fmt.Println(servers.Hosts())
+		fmt.Println(servers.Hosts(cliArgs.RedirectIP))
 	case "burp":
 		fmt.Printf("// Burp file for %s", cliArgs.PCAP)
 		fmt.Println(servers.Burp())
 	case "both":
 		fmt.Printf("# hosts file for %s\n\n", cliArgs.PCAP)
-		fmt.Println(servers.Hosts())
+		fmt.Println(servers.Hosts(cliArgs.RedirectIP))
 		fmt.Printf("\n\n\n")
 		fmt.Printf("// Burp file for %s", cliArgs.PCAP)
 		fmt.Println(servers.Burp())

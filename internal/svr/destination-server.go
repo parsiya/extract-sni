@@ -63,8 +63,3 @@ func (s DestinationServer) HostsString(redirectIP string) (string, error) {
 	return fmt.Sprintf("%s %s # %s:%d", redirectIP, s.sni, s.IPs, s.port), nil
 
 }
-
-// LocalHostsString calls HostsString with "127.0.0.1."
-func (s DestinationServer) LocalHostsString() (string, error) {
-	return s.HostsString("127.0.0.1")
-}

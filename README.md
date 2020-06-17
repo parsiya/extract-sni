@@ -6,7 +6,7 @@ Burp config for proxying thick clients.
 
 1. `go get github.com/parsiya/extract-sni`
 2. Capture traffic for an application and store it in a pcap file.
-3. `go run extract-sni.go whatever.pcap -o both > whatever.txt`
+3. `go run extract-sni.go whatever.pcap > whatever.txt`
 4. Paste the section for the `hosts` file into `etc/hosts`. This will redirect
    all endpoints to localhost.
 5. Paste the Burp section into a Burp config file and load it into Burp.
@@ -22,7 +22,23 @@ Please see this blog post for this technique:
 
 * https://parsiya.net/blog/2020-05-09-thick-client-proxing-part-10-the-hosts-file/
 
+## npcap
+On Windows, you need to install [npcap](https://nmap.org/npcap/#download) for
+the pcap library to work. Be sure to check
+`Install Npcap in WinPcap API-compatible Mode`
+(which I think is enabled by default).
+
+I have not tested this on other operating systems. The overwhelming majority of
+my work (videogames) happen on Windows.
+
 ## Parameters
+The only required parameter is the pcap file. `extract-sni traffic.pcap`. The
+output be printed to stdout (you can pipe it into a file). The default DNS is
+`8.8.8.8:53` and the default redirect IP is `127.0.0.1`.
+
+When specifying the DNS address with `-d/-dns` there is no need to specify a
+port. The default port `53` will be used. E.g.,
+`extract-sni -d 1.1.1.1 traffic.pcap`.
 
 ### pcap file
 Pass the pcap file that should be parsed as a positional parameter. This is the
@@ -93,18 +109,20 @@ For more information please see:
 
 ```
 $ go run extract-sni.go -h
-Extracts SNIs from a pcap and generates output usable in etc/hosts file and a Burp config for thick client proxying.
-Version 0.1.0
-Usage: extract-sni.exe [--dns address/ip:port] [--output OUTPUT] traffic.pcap
+Extracts SNIs from a pcap and generates output usable in etc/hosts file and a Burp config that can be used for proxying thick clients.
+Version 0.2.0
+Usage: extract-sni.exe [--dns address/ip:port] [--output both] [--redirectip 127.0.0.1] traffic.pcap
 
 Positional arguments:
   traffic.pcap           pcap file to parse
 
 Options:
   --dns address/ip:port, -d address/ip:port
-                         DNS server as Address/IP:Port
-  --output OUTPUT, -o OUTPUT
+                         DNS server as Address/IP:Port [default: 8.8.8.8:53]
+  --output both, -o both
                          output format [default: both]
+  --redirectip 127.0.0.1, -r 127.0.0.1
+                         IP address to redirect the hosts to [default: 127.0.0.1]
   --help, -h             display this help and exit
   --version              display version and exit
 ```
@@ -117,3 +135,22 @@ Options:
     3. Things might have changed but last I checked, the `gopacket` package was
        OS specific and I do not want to deal with that headache.
 
+## Troubleshooting
+
+### My Output File is Noisy
+It's because your pcap is noisy. Try to filter as much unrelated traffic as you
+can. I use the techniques described in `Network Traffic Attribution on Windows`:
+
+* https://parsiya.net/blog/2015-08-01-network-traffic-attribution-on-windows/
+
+I usually use [Microsoft Network Monitor][netmon] or Netmon. With Netmon you can
+filter traffic by process. However, this adds an extra step. Netmon's cap file
+must be converted to pcap using Wireshark (or other tools). Keep in mind that
+sometimes Wireshark cannot [convert cap files to pcap][cap-to-pcap].
+
+[netmon]: https://www.microsoft.com/en-ca/download/details.aspx?id=4865
+[cap-to-pcap]: https://parsiya.net/cheatsheet/#open-a-network-monitor-cap-file-in-wireshark-and-save-is-disabled
+
+### Error `Couldn't load wpcap.dll`
+This happens if [npcap](https://nmap.org/npcap/#download) is not installed. See
+the [npcap](#npcap) section above for more info.

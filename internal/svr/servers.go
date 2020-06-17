@@ -91,7 +91,9 @@ func ReadPCAP(pcapFile string, useIP bool) (Servers, error) {
 					servers[s.String()] = s
 
 				case tlsx.ErrHandshakeWrongType:
-					fallthrough
+					// Adding fallthrough here was a mistake. We get here if see
+					// other steps of the TLS handshake.
+					continue
 				default:
 					log.Println("Error reading Client Hello:", err)
 					log.Println("Raw Client Hello:", tcp.LayerPayload())
@@ -129,13 +131,13 @@ func (servers Servers) PopulateServers(dns string) {
 
 // Hosts creates the hosts file output for servers. Be sure to call
 // PopulateServers() first if you have passed a DNS server to the app.
-func (servers Servers) Hosts() string {
+func (servers Servers) Hosts(redirectIP string) string {
 
 	var sb strings.Builder
 	for _, s := range servers {
-		hostStr, err := s.LocalHostsString()
+		hostStr, err := s.HostsString(redirectIP)
 		if err != nil {
-			// The only time LocalHostsString() returns an error is if the IPs
+			// The only time HostsString() returns an error is if the IPs
 			// field is nil.
 			log.Println(err)
 			continue
