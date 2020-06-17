@@ -1,4 +1,5 @@
 module github.com/parsiya/extract-sni
+
 go 1.14
 
 require (

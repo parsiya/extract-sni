@@ -53,14 +53,14 @@ func (s *DestinationServer) Lookup(server string) error {
 	return nil
 }
 
-// HostsString is the represenation of the svr. It can be pasted into the hosts
+// HostsString is the representation of the svr. It can be pasted into the hosts
 // file to redirect the endpoint to the redirectIP. It does not check if
 // redirectIP is in the correct format.
 func (s DestinationServer) HostsString(redirectIP string) (string, error) {
 	if s.IPs == "" {
 		return "", fmt.Errorf("ips is not populated")
 	}
-	return fmt.Sprintf("%s %s # %s - %d", redirectIP, s.sni, s.IPs, s.port), nil
+	return fmt.Sprintf("%s %s # %s:%d", redirectIP, s.sni, s.IPs, s.port), nil
 
 }
 
