@@ -46,7 +46,7 @@ func ReadPCAP(pcapFile string, useIP bool) (Servers, error) {
 
 			tcp, ok := tcpLayer.(*layers.TCP)
 			if !ok {
-				log.Println("Could not decode the TCP layer for packet with timestamp", packet.Metadata().Timestamp)
+				log.Printf("Could not decode the TCP layer for packet with timestamp %v.", packet.Metadata().Timestamp)
 				continue
 			}
 
