@@ -58,7 +58,7 @@ func (s *DestinationServer) Lookup(server string) error {
 // redirectIP is in the correct format.
 func (s DestinationServer) HostsString(redirectIP string) (string, error) {
 	if s.IPs == "" {
-		return "", fmt.Errorf("ips is not populated")
+		return "", fmt.Errorf("The ips field is not populated.")
 	}
 	return fmt.Sprintf("%s %s # %s:%d", redirectIP, s.sni, s.IPs, s.port), nil
 

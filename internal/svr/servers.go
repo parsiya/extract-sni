@@ -11,7 +11,7 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
-// Servers is an alias for map[string]DestinationServer
+// Servers is an alias for map[string]DestinationServer.
 type Servers map[string]DestinationServer
 
 // ReadPCAP reads a pcap file and returns a map of unpopulated servers. If useIP
@@ -91,7 +91,7 @@ func ReadPCAP(pcapFile string, useIP bool) (Servers, error) {
 					servers[s.String()] = s
 
 				case tlsx.ErrHandshakeWrongType:
-					continue
+					fallthrough
 				default:
 					log.Println("Error reading Client Hello:", err)
 					log.Println("Raw Client Hello:", tcp.LayerPayload())
@@ -107,8 +107,10 @@ func ReadPCAP(pcapFile string, useIP bool) (Servers, error) {
 // PopulateServers calls Populate on a map of servers.
 func (servers Servers) PopulateServers(dns string) {
 
-	// Parallelization here will not save much time. If this turns out to be a
-	// huge bottleneck, we can return here and add it.
+	// Parallel code will not save much time here. If this turns out to be a
+	// huge bottleneck, we can return here and add it. We are using a map so we
+	// either have to refactor the whole thing or use a sync map which does not
+	// give us a lot of benefit.
 
 	// Range over the servers.
 	for key, s := range servers {
@@ -145,7 +147,7 @@ func (servers Servers) Hosts() string {
 	return sb.String()
 }
 
-// Burp creates the "hostname_resolution" json array that can be pasted in Burp
+// Burp creates the "hostname_resolution" json array that can be added to Burp
 // config.
 func (servers Servers) Burp() string {
 
@@ -155,7 +157,7 @@ func (servers Servers) Burp() string {
     "hostname": "%s",
     "ip_address": "%s"
 }`
-
+	// Example:
 	// {
 	// 	"enabled":true,
 	// 	"hostname":"example.net",
@@ -170,6 +172,6 @@ func (servers Servers) Burp() string {
 		ipStrings = append(ipStrings, tmpString)
 	}
 
-	// Join everything together and spit it out.
+	// Join everything together and return.
 	return strings.Join(ipStrings, ", ")
 }
