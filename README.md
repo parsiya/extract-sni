@@ -13,6 +13,13 @@ Burp config for proxying thick clients.
 6. ???
 7. Profit
 
+![report screenshot](.github/screenshot.png)
+
+See a report sample:
+
+* [Report](report-sample/file.html)
+* [Burp config](report-sample/file.json)
+
 ## Why?
 Identifying endpoints, redirecting them to Burp and telling Burp's invisible
 proxying where to send these endpoints is a manual process. This script
