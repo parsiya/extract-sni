@@ -8,7 +8,7 @@ Burp config for proxying thick clients.
 2. Capture traffic for an application and store it in a pcap file.
 3. `go run extract-sni.go whatever.pcap -output report`
 4. Open `report.html` to view the instructions.
-    1. Some data need to be copied into `etc/hosts` to redirect traffic.
+    1. Some text should be copied to `etc/hosts` to redirect traffic to Burp.
 5. Import `report.json` in Burp to setup proxy listeners 
 6. ???
 7. Profit
