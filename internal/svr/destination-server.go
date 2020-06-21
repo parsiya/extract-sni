@@ -11,16 +11,16 @@ import (
 // DestinationServer represents a target server for the application.
 type DestinationServer struct {
 	// sni is the exact text from the SNI extension in ClientHello.
-	sni string
+	SNI string
 	// port is the destination port. Typically 443.
-	port int
-	// A comma separated string of IP addresses for the server.
-	IPs string
+	Port int
+	// An array of IP addresses for the server.
+	IPs []string
 }
 
 // String is the stringer for the server.
 func (s DestinationServer) String() string {
-	return fmt.Sprintf("%s:%d", s.sni, s.port)
+	return fmt.Sprintf("%s:%d", s.SNI, s.Port)
 }
 
 // Lookup does a DNS lookup on the server and populates the IPs field.
@@ -29,7 +29,7 @@ func (s *DestinationServer) Lookup(server string) error {
 	// Based on
 	// https://github.com/bogdanovich/dns_resolver/blob/a8e42bc6a5b6c9a93be01ca204be7e17f7ba4cd2/dns_resolver.go#L51
 	msg := new(dns.Msg)
-	msg.SetQuestion(dns.Fqdn(s.sni), dns.TypeA)
+	msg.SetQuestion(dns.Fqdn(s.SNI), dns.TypeA)
 	msg.RecursionDesired = true
 
 	ans, err := dns.Exchange(msg, server)
@@ -49,17 +49,18 @@ func (s *DestinationServer) Lookup(server string) error {
 		}
 	}
 
-	s.IPs = strings.Join(ipStrings, ", ")
+	s.IPs = ipStrings
 	return nil
 }
 
 // HostsString is the representation of the svr. It can be pasted into the hosts
-// file to redirect the endpoint to the redirectIP. It does not check if
-// redirectIP is in the correct format.
+// file to redirect the endpoint to redirectIP. It does no format validation on
+// redirectIP.
 func (s DestinationServer) HostsString(redirectIP string) (string, error) {
-	if s.IPs == "" {
-		return "", fmt.Errorf("The ips field is not populated.")
+	if len(s.IPs) == 0 {
+		return "", fmt.Errorf("The IPs field is not populated.")
 	}
-	return fmt.Sprintf("%s %s # %s:%d", redirectIP, s.sni, s.IPs, s.port), nil
-
+	// Convert s.IPs to a comma separated string.
+	strIPs := strings.Join(s.IPs, ", ")
+	return fmt.Sprintf("%s %s # %s:%d", redirectIP, s.SNI, strIPs, s.Port), nil
 }

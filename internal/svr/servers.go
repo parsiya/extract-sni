@@ -1,7 +1,6 @@
 package svr
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/parsiya/extract-sni/internal/report"
 )
 
 // Servers is an alias for map[string]DestinationServer.
@@ -67,8 +67,8 @@ func ReadPCAP(pcapFile string, useIP bool) (Servers, error) {
 				case nil:
 
 					s := DestinationServer{
-						sni:  hello.SNI,
-						port: int(tcp.DstPort),
+						SNI:  hello.SNI,
+						Port: int(tcp.DstPort),
 					}
 
 					// Check if the key already exists in the servers.
@@ -81,7 +81,7 @@ func ReadPCAP(pcapFile string, useIP bool) (Servers, error) {
 						// Get the IP layer and the destination IP address.
 						if ipLayer := packet.Layer(layers.LayerTypeIPv4); ipLayer != nil {
 							if ip, ok := ipLayer.(*layers.IPv4); ok {
-								s.IPs = ip.DstIP.String()
+								s.IPs = []string{ip.DstIP.String()}
 							}
 						}
 						// If this doesn't work the IP address stays empty.
@@ -149,31 +149,68 @@ func (servers Servers) Hosts(redirectIP string) string {
 	return sb.String()
 }
 
-// Burp creates the "hostname_resolution" json array that can be added to Burp
-// config.
-func (servers Servers) Burp() string {
+// Burp creates and returns a Burp config string that can be loaded into Burp.
+func (servers Servers) Burp(listenerIP string) (string, error) {
 
-	jString := `
-{
-    "enabled": true,
-    "hostname": "%s",
-    "ip_address": "%s"
-}`
-	// Example:
-	// {
-	// 	"enabled":true,
-	// 	"hostname":"example.net",
-	// 	"ip_address":"93.184.216.34"
-	// }
-
-	var ipStrings []string
+	var hosts []report.Host
+	// lsnMap acts as an index to keep unique ports.
+	lsnMap := make(map[int]struct{})
+	// listeners is the array containing unique listeners.
+	var listeners []report.Listener
+	var config report.BurpConfig
 
 	for _, s := range servers {
 
-		tmpString := fmt.Sprintf(jString, s.sni, strings.Split(s.IPs, ",")[0])
-		ipStrings = append(ipStrings, tmpString)
+		// We need to do two things here:
+		// 1. Convert each server into a report.Hostname
+		// 2. Create a map of unique listener ports to create report.Listener
+
+		hosts = append(hosts, report.NewHost(s.SNI, s.IPs[0]))
+
+		// Is checking if the port already exists in the map faster than
+		// creating a new object and assigning it anyways?
+		if _, ok := lsnMap[s.Port]; !ok {
+			// Map does not contain this port. Add it to the map.
+			lsnMap[s.Port] = struct{}{}
+
+			// Create a listener and add it to the array.
+			listeners = append(listeners, report.NewListener(listenerIP, s.Port))
+		}
 	}
 
-	// Join everything together and return.
-	return strings.Join(ipStrings, ", ")
+	// Now we can create our BurpConfig.
+	config.ProjectOptions.Connections.HostnameResolution = hosts
+	config.Proxy.RequestListeners = listeners
+
+	// Marshall it and return the json string.
+	return config.JSON()
 }
+
+// // Burp creates the "hostname_resolution" json array that can be added to Burp
+// // config.
+// func (servers Servers) Burp() string {
+
+// 	jString := `
+// {
+//     "enabled": true,
+//     "hostname": "%s",
+//     "ip_address": "%s"
+// }`
+// 	// Example:
+// 	// {
+// 	// 	"enabled":true,
+// 	// 	"hostname":"example.net",
+// 	// 	"ip_address":"93.184.216.34"
+// 	// }
+
+// 	var ipStrings []string
+
+// 	for _, s := range servers {
+
+// 		tmpString := fmt.Sprintf(jString, s.sni, strings.Split(s.IPs, ",")[0])
+// 		ipStrings = append(ipStrings, tmpString)
+// 	}
+
+// 	// Join everything together and return.
+// 	return strings.Join(ipStrings, ", ")
+// }

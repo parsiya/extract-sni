@@ -6,121 +6,100 @@ Burp config for proxying thick clients.
 
 1. `go get github.com/parsiya/extract-sni`
 2. Capture traffic for an application and store it in a pcap file.
-3. `go run extract-sni.go whatever.pcap > whatever.txt`
-4. Paste the section for the `hosts` file into `etc/hosts`. This will redirect
-   all endpoints to localhost.
-5. Paste the Burp section into a Burp config file and load it into Burp.
+3. `go run extract-sni.go whatever.pcap -output report`
+4. Open `report.html` to view the instructions.
+    1. Some data need to be copied into `etc/hosts` to redirect traffic.
+5. Import `report.json` in Burp to setup proxy listeners 
 6. ???
 7. Profit
 
 ## Why?
 Identifying endpoints, redirecting them to Burp and telling Burp's invisible
 proxying where to send these endpoints is a manual process. This script
-automates some of it for me.
+automates most of it for me.
 
-Please see this blog post for this technique:
+Please see this blog post for this technique ats:
 
 * https://parsiya.net/blog/2020-05-09-thick-client-proxing-part-10-the-hosts-file/
 
 ## npcap
 On Windows, you need to install [npcap](https://nmap.org/npcap/#download) for
-the pcap library to work. Be sure to check
-`Install Npcap in WinPcap API-compatible Mode`
-(which I think is enabled by default).
-
-I have not tested this on other operating systems. The overwhelming majority of
-my work (videogames) happen on Windows.
+the Golang's pcap library to work. Be sure to check
+`Install Npcap in WinPcap API-compatible Mode` in the installer
+(it's enabled by default).
 
 ## Parameters
-The only required parameter is the pcap file. `extract-sni traffic.pcap`. The
-output be printed to stdout (you can pipe it into a file). The default DNS is
-`8.8.8.8:53` and the default redirect IP is `127.0.0.1`.
+The only required parameter is the pcap file. `extract-sni traffic.pcap`. In the
+absence of the `output` parameter, the report will be `traffic.html` and the
+Burp config file will be stored in `traffic.json` in the same path as the pcap
+file.
 
 When specifying the DNS address with `-d/-dns` there is no need to specify a
-port. The default port `53` will be used. E.g.,
-`extract-sni -d 1.1.1.1 traffic.pcap`.
+port, the default port `53` will be used. E.g.,
+`extract-sni -d 1.1.1.1 traffic.pcap` will use `1.1.1.1:53`.
 
 ### pcap file
 Pass the pcap file that should be parsed as a positional parameter. This is the
 only required parameter.
 
-* `go run extract-sni.go whatever.pcap`
+* `extract-sni.go whatever.pcap`
 
-### DNS
-Optional DNS to use to resolve these domains. If this parameter is not provided
-then the application uses the destination IP address from the pcap file.
+### DNS -d/-dns
+Optional DNS to use for domain lookup. If this parameter is not provided then
+the the application uses the destination IP address from the pcap file for each
+domain.
 
-Pass with `-d` or `--dns`. The value can be a complete `server:port` like
-`dns.google:53`. Or `IP:port` like `8.8.8.8:53`. Port is optional and will
-default to `53` if not passed so `8.8.8.8` and `dns.google` are both valid
-values.
+If provided, the DNS server will be used to do lookups. The value can be a
+complete `server:port` like `dns.google:53`, or `IP:port` like `8.8.8.8:53`.
+Port is optional and will default to `53`. Both `8.8.8.8` and
+`dns.google` are both valid values.
 
 The application does some validation checks here but it's mostly the
 responsibility of the user to pass a valid and reachable DNS server.
 
-### Output
-The output format for the results. Default is `hosts`. Pass with `-o` or
-`--output`. The application currently supports two output formats `hosts`
-(default) and `burp`. `both` creates both formats in one file.
+### Redirect IP -r/-redirectip
+Use the IP address that you want the traffic to be redirected to. This is used
+in two places:
 
-The output is sent to standard output. Logs and error messages are sent to
-`os.Stderr` so they do not interfere with the output. You can (and probably
-should) pipe the output of the app to a text file.
+1. The `hosts` file.
+2. The Burp proxy listener will also listen on this IP address.
 
-* `go run extract-sni.go whatever.pcap > whatever-hosts.txt`
+For most uses cases this parameter does not need to be provided and the default
+`127.0.0.1` is good enough.
 
-#### hosts
-Creates the entries to redirect these domains to localhost by adding them to the
-`hosts` file. The values look like the following:
+Note: Only use IP addresses here, not domains like `example.net` or `localhost`.
 
-`127.0.0.1 example.net # 93.184.216.34 - 443`
+### Output -o/-output
+The path of the report. The report contains the instructions on how to set up
+and get started in proxying. The Burp config file will appear in the same path
+but with the `json` extension.
 
-Note the extra info such as the resolved IP address and the destination port in
-the comments in each line. These can come in handy to quickly lookup where each
-domain is.
+Any extension here will be ignored. For example, `-o report.txt` will result in two
+files:
 
-#### Burp
-Creates the entries to be added to a Burp project configuration file. These
-entries should be added to the
-`project_options > connections > hostname_resolution` array in the Burp's config
-file.
+1. `report.html`: Report with instructions.
+2. `report.json`: Burp config file.
 
-```json
-"project_options":{
-    "connections":{
-        "hostname_resolution":[
-            // paste here
-            {
-                "enabled":true,
-                "hostname":"example.net",
-                "ip_address":"93.184.216.34"
-            },
-            // more
-        ],
-    }
-}
-```
-
-For more information please see:
-
-* https://portswigger.net/burp/documentation/desktop/options/connections#hostname-resolution
+If this parameter is not used, the name of the pcap file is used. For example
+`extract-sni app-capture.pcap` creates: `app-capture.html` and
+`app-capture.json` in the same path as the pcap file.
 
 ## Usage
 
 ```
-$ go run extract-sni.go -h
+$ extract-sni.go -h
 Extracts SNIs from a pcap and generates output usable in etc/hosts file and a Burp config that can be used for proxying thick clients.
 Version 0.2.0
-Usage: extract-sni.exe [--dns address/ip:port] [--output both] [--redirectip 127.0.0.1] traffic.pcap
+Usage: extract-sni.exe [--dns address/ip:port] [--output report] [--redirectip 127.0.0.1] traffic.pcap
 
 Positional arguments:
   traffic.pcap           pcap file to parse
 
 Options:
   --dns address/ip:port, -d address/ip:port
-                         DNS server as Address/IP:Port [default: 8.8.8.8:53]
-  --output both, -o both
-                         output format [default: both]
+                         DNS server as Address/IP:Port
+  --output report, -o report
+                         output report filename
   --redirectip 127.0.0.1, -r 127.0.0.1
                          IP address to redirect the hosts to [default: 127.0.0.1]
   --help, -h             display this help and exit
@@ -131,15 +110,13 @@ Options:
 
 1. Why doesn't it capture pcaps, too?
     1. It's a small tool that does one thing. I do not like feature creep.
-    2. A pcap file from the traffic on one interface will have lots of noise.
-    3. Things might have changed but last I checked, the `gopacket` package was
-       OS specific and I do not want to deal with that headache.
+    2. I might actually add this later but right now I am OK with this.
 
 ## Troubleshooting
 
 ### My Output File is Noisy
-It's because your pcap is noisy. Try to filter as much unrelated traffic as you
-can. I use the techniques described in `Network Traffic Attribution on Windows`:
+Your pcap is noisy. Try to filter as much unrelated traffic as you can. I use
+the techniques described in `Network Traffic Attribution on Windows`:
 
 * https://parsiya.net/blog/2015-08-01-network-traffic-attribution-on-windows/
 
@@ -152,5 +129,7 @@ sometimes Wireshark cannot [convert cap files to pcap][cap-to-pcap].
 [cap-to-pcap]: https://parsiya.net/cheatsheet/#open-a-network-monitor-cap-file-in-wireshark-and-save-is-disabled
 
 ### Error `Couldn't load wpcap.dll`
-This happens if [npcap](https://nmap.org/npcap/#download) is not installed. See
-the [npcap](#npcap) section above for more info.
+`npcap` is not installed. See the [npcap](#npcap) section above for more info.
+
+## License
+Opensourced under the MIT license. See the [LICENSE](LICENSE) file for details.
