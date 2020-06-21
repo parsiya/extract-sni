@@ -1,4 +1,4 @@
-# extract-sni
+# extract-sni <!-- omit in toc -->
 Extracts SNIs from a pcap and generates output usable in `etc/hosts` file and
 Burp config for proxying thick clients.
 
@@ -13,12 +13,22 @@ Burp config for proxying thick clients.
 6. ???
 7. Profit
 
-![report screenshot](.github/screenshot.png)
-
-See a report sample:
-
-* [Report](report-sample/file.html)
-* [Burp config](report-sample/file.json)
+## Table of Contents <!-- omit in toc -->
+- [Quickstart](#quickstart)
+- [Why?](#why)
+- [npcap](#npcap)
+- [Parameters](#parameters)
+  - [pcap file](#pcap-file)
+  - [DNS -d/-dns](#dns--d-dns)
+  - [Redirect IP -r/-redirectip](#redirect-ip--r-redirectip)
+  - [Output -o/-output](#output--o-output)
+- [Usage](#usage)
+- [Questions](#questions)
+- [Troubleshooting](#troubleshooting)
+  - [My Output File is Noisy](#my-output-file-is-noisy)
+  - [Error `Couldn't load wpcap.dll`](#error-couldnt-load-wpcapdll)
+- [Samples](#samples)
+- [License](#license)
 
 ## Why?
 Identifying endpoints, redirecting them to Burp and telling Burp's invisible
@@ -137,6 +147,16 @@ sometimes Wireshark cannot [convert cap files to pcap][cap-to-pcap].
 
 ### Error `Couldn't load wpcap.dll`
 `npcap` is not installed. See the [npcap](#npcap) section above for more info.
+
+## Samples
+See a report sample:
+
+* [Report](report-sample/file.html)
+* [Burp config](report-sample/file.json)
+
+The screenshot from a report:
+
+![report screenshot](.github/screenshot.png)
 
 ## License
 Opensourced under the MIT license. See the [LICENSE](LICENSE) file for details.
