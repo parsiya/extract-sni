@@ -40,8 +40,9 @@ like the Windows proxy settings or any other proxy settings. It does not
 
 [proxy-aware]: https://parsiya.net/blog/2016-07-28-thick-client-proxying-part-6-how-https-proxies-work/#5-proxy-aware-clients
 
-Read this blog post to get started:
+Read these blog posts to get started:
 
+* https://parsiya.net/blog/2020-06-22-thick-client-proxying-part-11-gog-galaxy-and-extract-sni/
 * https://parsiya.net/blog/2020-05-09-thick-client-proxing-part-10-the-hosts-file/
 
 If the application uses HTTPs then we can process SNI
