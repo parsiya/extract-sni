@@ -10,6 +10,3 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-
-# Ignore the `tests` directory until I get better tests.
-test-files
